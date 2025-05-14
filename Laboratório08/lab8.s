@@ -188,10 +188,10 @@ ascMai:
 
 redefine:
 
-	sub t3, t3, t4
-	sub t3, t5, t3
-	sb t3, 0(a2)
-	j add
+    addi t4, t4, 26     # corrige wrap-around
+    sb t4, 0(a2)
+    j add
+
 
 
 add:
@@ -263,7 +263,7 @@ read:
 write:
 	li a0, 1        	# file descriptor = 1 (stdout)
 	la a1, vetorMSGTwo   	# buffer
-	li a2, 24        	# size - Writes 4 bytes.
+	li a2, 31        	# size - Writes 4 bytes.
 	li a7, 64       	# syscall write (64)
 	ecall
 	ret
