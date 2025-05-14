@@ -34,15 +34,17 @@ main:
 #Length is the key. Allan Turing#4881
 
 
-
 desenha:
-	li a0, 0 # x coordinate
-	li a1, 0 # y coordinate
+	li a0, 0          # x = 0
+	li a1, 0          # y = 0
 	la a5, input
-	addi a5, a5, 13
+	addi a5, a5, 13   # pular os 13 primeiros bytes, se necessário
 
-shift:
+lpD:
+	# carregar cor do byte atual
 	lbu t1, 0(a5)
+	
+	# expandir byte para ARGB (0xTTTTTTFF)
 	mv t2, t1
 	slli t2, t2, 8
 	or t2, t2, t1
@@ -50,29 +52,24 @@ shift:
 	or t2, t2, t1
 	slli t2, t2, 8
 	ori t2, t2, 0xFF
+
+	# chamar setPixel
 	mv a2, t2
-	li a7, 2200 # syscall setPixel (2200)
+	li a7, 2200
 	ecall
+
+	# avançar ponteiro de leitura
 	addi a5, a5, 1
-	li t5, 64
-	bge a0, t5, incrementaY
+
+	# avançar x
 	addi a0, a0, 1
-	j shift
+	li t5, 64
+	blt a0, t5, lpD  # se x < 64, continua na mesma linha
 
-
-
-incrementaY:
-	bge a0, t5, atualizaX
-	bge a1, t5, end
-	addi a1, a1, 1
-	j shift
-
-
-atualizaX:
+	# resetar x e avançar y
 	li a0, 0
-	j incrementaY
-
-
+	addi a1, a1, 1
+	blt a1, t5, lpD  # se y < 64, continua
 
 
 
