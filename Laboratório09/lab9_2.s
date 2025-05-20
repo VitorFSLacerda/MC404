@@ -147,45 +147,57 @@ terminou:
     addi sp, sp, 8
     ret
 
-# char* itoa(int value, char* buffer)
-# a0 = inteiro
+
+# char* itoa(int value, char* buffer, int base)
+# a0 = valor
 # a1 = buffer
+# a2 = base
 
 itoa:
-    addi sp, sp, -16
+    addi sp, sp, -20
     sw ra, 0(sp)
-    sw a1, 4(sp)         # salvar ponteiro original do buffer
-    mv t0, a0            # valor
-    li t6, 0             # flag negativo (0 = positivo)
+    sw a1, 4(sp)          # salvar ponteiro original do buffer
+    sw a2, 8(sp)          # salvar base
+    mv t0, a0             # valor
+    li t6, 0              # flag negativo
 
-    bltz t0, negati    # se valor < 0, vai pra negativo
+    bltz t0, nega
 
 continua:
-    li t2, 10            # divisor
-    mv t1, a1            # ponteiro de escrita
+    mv s0, a2             # s0 = base
+    mv t1, a1             # ponteiro de escrita
 
 itoa_loop:
-    rem t3, t0, t2
-    addi t3, t3, 48      # converter para ASCII
+    rem t3, t0, s0
+    li t2, 10
+    bge t3, t2, converte_hex
+
+    addi t3, t3, 48       # '0'..'9'
+    j salva_digito
+
+converte_hex:
+    addi t3, t3, 55       # 'A' = 65, 65 - 10 = 55
+
+salva_digito:
     sb t3, 0(t1)
     addi t1, t1, 1
-    div t0, t0, t2
+    div t0, t0, s0
     bnez t0, itoa_loop
 
-    beqz t6, itoa_termina # se não for negativo, pula
+    beqz t6, itoa_termina
 
-    li t4, 45            # '-'
+    li t4, 45             # '-'
     sb t4, 0(t1)
     addi t1, t1, 1
 
 itoa_termina:
-    sb zero, 0(t1)       # termina string
+    sb zero, 0(t1)
 
     # inverter string
-    lw a1, 4(sp)         # recupera início do buffer
+    lw a1, 4(sp)          # início do buffer
     mv t2, a1
-    add t3, t1, zero     # t3 = ponteiro final
-    addi t3, t3, -1      # último caractere antes do '\0'
+    add t3, t1, zero
+    addi t3, t3, -1
 
 inverte_loop:
     bge t2, t3, fim_inverte
@@ -199,14 +211,15 @@ inverte_loop:
 
 fim_inverte:
     lw ra, 0(sp)
-    addi sp, sp, 16
-    mv a0, a1             # retorna ponteiro para string
+    addi sp, sp, 20
+    mv a0, a1
     ret
 
-negati:
+nega:
     li t6, 1
     neg t0, t0
     j continua
+
 
 
 # Encerrar o programa
