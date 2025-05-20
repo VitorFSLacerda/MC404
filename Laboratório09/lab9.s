@@ -23,8 +23,8 @@ linked_list_search:
     li t6, 0
 
 loop1:
-    beqz t0, naoAchou
     lw t0, 0(a0)
+    beqz t0, naoAchou
     lw t1, 4(a0)
     add t0, t0, t1  
     beq t0, a1, achou
