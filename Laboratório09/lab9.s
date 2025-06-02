@@ -1,7 +1,6 @@
-.data 
+.data
 .align 2
 barN: .byte '\n'
-
 
 .globl linked_list_search
 .globl puts
@@ -9,59 +8,57 @@ barN: .byte '\n'
 .globl atoi
 .globl itoa
 .globl exit
-.globl _start
+
 
 .text
 .align 2
 
-
+# Busca na lista ligada: recebe ponteiro em a0 e valor alvo em a1
 linked_list_search:
     addi sp, sp, -16
     sw ra, 0(sp)
     sw a0, 4(sp)
     sw a1, 8(sp)
-    li t6, 0
+    li t6, 0           # contador de posições
 
 loop1:
-    lw t0, 0(a0)
-    beqz t0, naoAchou
-    lw t1, 4(a0)
-    add t0, t0, t1  
-    beq t0, a1, achou
-    addi t6, t6, 1
-    lw t3, 8(a0)
-    mv a0, t3
+    beqz a0, naoAchou  # fim da lista
+    lw t0, 0(a0)       # valor1
+    lw t1, 4(a0)       # valor2
+    add t2, t0, t1     # soma
+    beq t2, a1, achou  # achou?
+    addi t6, t6, 1     # conta posição
+    lw a0, 8(a0)       # próximo nó
     j loop1
 
 naoAchou:
-    lw a1, 8(sp)
     lw ra, 0(sp)
     addi sp, sp, 16
     li a0, -1
     ret
 
 achou:
-    lw a1, 8(sp)
     lw ra, 0(sp)
     addi sp, sp, 16
     mv a0, t6
     ret
 
-# void puts(vsagdvsa, sadsa)
+# void puts(char* s)
 puts:
-    addi sp, sp, -8
+    addi sp, sp, -16
     sw ra, 0(sp)
     sw a0, 4(sp)
-    mv a1, a0
+    mv t1, a0
 
 loop2:
-    lb t0, 0(a1)
+    lb t0, 0(t1)
     beqz t0, acabou
     li a0, 1
+    mv a1, t1
     li a2, 1
     li a7, 64
     ecall
-    addi a1, a1, 1
+    addi t1, t1, 1
     j loop2
 
 acabou:
@@ -72,78 +69,161 @@ acabou:
     ecall
     lw ra, 0(sp)
     lw a0, 4(sp)
-    addi sp, sp, 8
+    addi sp, sp, 16
     ret
 
-
+# void gets(char* buffer)
 gets:
-    addi sp, sp, -8
+    addi sp, sp, -16
     sw ra, 0(sp)
     sw a0, 4(sp)
     mv a1, a0
 
 loop3:
-    
-    li a0, 0
+    li a0, 0       # stdin
+    mv a1, a1      # onde salvar o caractere
     li a2, 1
     li a7, 63
     ecall
-    li t0, 10
+
     lb t5, 0(a1)
+    li t0, 10      # '\n'
     beq t5, t0, barraN
     addi a1, a1, 1
     j loop3
 
 barraN:
-    sb zero, 0(a1) 
+    sb zero, 0(a1)   # adiciona '\0'
     lw ra, 0(sp)
     lw a0, 4(sp)
-    addi sp, sp, 8
+    addi sp, sp, 16
     ret
 
+# int atoi(char* str)
 atoi:
-    addi sp, sp, -8
+    addi sp, sp, -16
     sw ra, 0(sp)
     sw a0, 4(sp)
 
+    li t0, 1         # sinal positivo por padrão
+    li t4, 0         # acumulador
+
 loop4:
-    li t0, 32   
     lb t1, 0(a0)
-    beq t1, t0, espaco
-    li t0, 45
-    beq t1, t0, negativo
-    li t0, 1
-    li t4, 0
+    li t2, 32
+    beq t1, t2, skipEspaco
+    li t2, 45
+    beq t1, t2, negativo
     j convertInt
 
-espaco:
+skipEspaco:
     addi a0, a0, 1
     j loop4
 
 negativo:
     li t0, -1
+    addi a0, a0, 1
+    j convertInt
 
 convertInt:
-
     lb t1, 0(a0)
-    addi a0, a0, 1        # avança ponteiro
-
     beqz t1, terminou
-
-    li t2, 10             # '\n'
+    li t2, 10
     li t3, 48
-    mul t4, t4, t2 #t4 = 0 , t2 = 10
-    sub t1, t1, t3  # t3 = 48, t1 = caracter
-    add t4, t4, t1  #t4 acumulador
+    blt t1, t3, terminou     # se menor que '0', termina
+    li t5, 57
+    bgt t1, t5, terminou     # se maior que '9', termina
+
+    mul t4, t4, t2
+    sub t1, t1, t3
+    add t4, t4, t1
+    addi a0, a0, 1
     j convertInt
-    
+
 terminou:
-    lw ra, 0(sp)
     mul t4, t4, t0
     mv a0, t4
-    addi sp, sp, 8
+    lw ra, 0(sp)
+    addi sp, sp, 16
     ret
 
-itoa:
 
+# char* itoa(int value, char* buffer, int base)
+# a0 = valor
+# a1 = buffer
+# a2 = base
+
+itoa:
+    addi sp, sp, -32
+    sw ra, 0(sp)
+    sw a1, 4(sp)          # salvar ponteiro original do buffer
+    sw a2, 8(sp)          # salvar base
+    mv t0, a0             # valor
+    li t6, 0              # flag negativo
+
+    bltz t0, nega
+
+continua:
+    mv s0, a2             # s0 = base
+    mv t1, a1             # ponteiro de escrita
+
+itoa_loop:
+    rem t3, t0, s0
+    li t2, 10
+    bge t3, t2, converte_hex
+
+    addi t3, t3, 48       # '0'..'9'
+    j salva_digito
+
+converte_hex:
+    addi t3, t3, 55       # 'A' = 65, 65 - 10 = 55
+
+salva_digito:
+    sb t3, 0(t1)
+    addi t1, t1, 1
+    div t0, t0, s0
+    bnez t0, itoa_loop
+
+    beqz t6, itoa_termina
+
+    li t4, 45             # '-'
+    sb t4, 0(t1)
+    addi t1, t1, 1
+
+itoa_termina:
+    sb zero, 0(t1)
+
+    # inverter string
+    lw a1, 4(sp)          # início do buffer
+    mv t2, a1
+    add t3, t1, zero
+    addi t3, t3, -1
+
+inverte_loop:
+    bge t2, t3, fim_inverte
+    lb t4, 0(t2)
+    lb t5, 0(t3)
+    sb t5, 0(t2)
+    sb t4, 0(t3)
+    addi t2, t2, 1
+    addi t3, t3, -1
+    j inverte_loop
+
+fim_inverte:
+    lw ra, 0(sp)
+    addi sp, sp, 32
+    mv a0, a1
+    ret
+
+nega:
+    li t6, 1
+    neg t0, t0
+    j continua
+
+
+
+# Encerrar o programa
 exit:
+    li a0, 0
+    li a7, 93
+    ecall
