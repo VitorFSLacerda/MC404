@@ -45,7 +45,7 @@ achou:
 
 # void puts(char* s)
 puts:
-    addi sp, sp, -8
+    addi sp, sp, -16
     sw ra, 0(sp)
     sw a0, 4(sp)
     mv t1, a0
@@ -69,12 +69,12 @@ acabou:
     ecall
     lw ra, 0(sp)
     lw a0, 4(sp)
-    addi sp, sp, 8
+    addi sp, sp, 16
     ret
 
 # void gets(char* buffer)
 gets:
-    addi sp, sp, -8
+    addi sp, sp, -16
     sw ra, 0(sp)
     sw a0, 4(sp)
     mv a1, a0
@@ -96,12 +96,12 @@ barraN:
     sb zero, 0(a1)   # adiciona '\0'
     lw ra, 0(sp)
     lw a0, 4(sp)
-    addi sp, sp, 8
+    addi sp, sp, 16
     ret
 
 # int atoi(char* str)
 atoi:
-    addi sp, sp, -8
+    addi sp, sp, -16
     sw ra, 0(sp)
     sw a0, 4(sp)
 
@@ -144,7 +144,7 @@ terminou:
     mul t4, t4, t0
     mv a0, t4
     lw ra, 0(sp)
-    addi sp, sp, 8
+    addi sp, sp, 16
     ret
 
 
@@ -154,7 +154,7 @@ terminou:
 # a2 = base
 
 itoa:
-    addi sp, sp, -20
+    addi sp, sp, -32
     sw ra, 0(sp)
     sw a1, 4(sp)          # salvar ponteiro original do buffer
     sw a2, 8(sp)          # salvar base
@@ -211,7 +211,7 @@ inverte_loop:
 
 fim_inverte:
     lw ra, 0(sp)
-    addi sp, sp, 20
+    addi sp, sp, 32
     mv a0, a1
     ret
 
