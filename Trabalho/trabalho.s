@@ -33,37 +33,40 @@ _start:
 # Entrada:
 # a0 -> ponteiro para string de entrada (ex: "4,30,20,10,3\n")
 # a1 -> ponteiro para array de inteiros onde salvar
+
+# Saída:
+# a0 -> número de bytes andados na string (até o '\n')
+
 parse_numeros:
-    addi sp, sp, -16
-    sw ra, 12(sp)
-    sw a0, 8(sp)
-    sw a1, 4(sp)
+    addi sp, sp, -32
+    sw ra, 16(sp)
+    sw a0, 12(sp)      # salva entrada original
+    sw a1, 8(sp)
 
-    mv t0, a0      # t0 -> ponteiro atual na string
-    mv t1, a1      # t1 -> ponteiro atual no vetor destino
-
-    mv t2, t0      # t2 -> início do número atual
+    mv t0, a0          # ponteiro atual na string
+    mv t1, a1          # ponteiro atual no vetor destino
+    mv t2, t0          # início do número atual
 
     loop_parse:
         lb t3, 0(t0)       # t3 = caractere atual
-        li t4, 44          # ',' (vírgula)
+        li t4, 44          # ','
         li t5, 10          # '\n'
 
         beq t3, t4, salva_num
         beq t3, t5, salva_ultimo
         beqz t3, fim       # fim de string por segurança
 
-        addi t0, t0, 1     # avança na string
+        addi t0, t0, 1     # avança
         j loop_parse
 
     salva_num:
-        sb zero, 0(t0)     # substitui ',' por '\0' temporariamente
-        mv a0, t2          # a0 = ponteiro para início do número
-        jal atoi           # converte string -> inteiro em a0
-        sw a0, 0(t1)       # salva valor convertido no vetor
-        addi t1, t1, 4     # avança ponteiro de destino
-        addi t0, t0, 1     # pula o caractere nulo (vírgula que virou '\0')
-        mv t2, t0          # novo início do próximo número
+        sb zero, 0(t0)     # substitui ',' por '\0'
+        mv a0, t2          # ponteiro do número isolado
+        jal atoi
+        sw a0, 0(t1)
+        addi t1, t1, 4
+        addi t0, t0, 1     # pula '\0'
+        mv t2, t0
         j loop_parse
 
     salva_ultimo:
@@ -71,15 +74,17 @@ parse_numeros:
         mv a0, t2
         jal atoi
         sw a0, 0(t1)
-        # fim: não avança mais t1
+        addi t0, t0, 1     # agora t0 aponta para depois do '\n'
         j fim
 
     fim:
-        lw ra, 12(sp)
-        lw a0, 8(sp)
-        lw a1, 4(sp)
-        addi sp, sp, 16
+        lw ra, 16(sp)
+        lw t6, 12(sp)      # entrada original
+        sub a0, t0, t6     # a0 = bytes andados
+        lw a1, 8(sp)
+        addi sp, sp, 32
         ret
+
 
 
 
