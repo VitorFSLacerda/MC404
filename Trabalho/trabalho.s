@@ -156,11 +156,11 @@ gets:
     conta_nl:
         addi t1, t1, 1       # incrementa contador
         li t2, 3
-        beq t1, t2, fim      # se encontrou 3 '\n', parar
+        beq t1, t2, fim2     # se encontrou 3 '\n', parar
         addi a1, a1, 1       # senão, continua lendo
         j loop2
 
-    fim:
+    fim2
         sb zero, 0(a1)       # adiciona '\0' ao final
         lw ra, 12(sp)
         addi sp, sp, 16
