@@ -6,6 +6,7 @@
 .globl puts
 .globl gets
 .globl atoi
+.globl itoa
 .globl exit
 .globl parse_numeros
 
@@ -13,6 +14,7 @@
     entrada: .skip 6000
     arquiteturaDaRede: .skip 6000
     buffer: .skip 32
+    copia: .skip 100
 
 
 .text
@@ -24,16 +26,21 @@ _start:
     la a0, entrada
     jal gets
     la a1, arquiteturaDaRede
-    jal parse_numeros
-    mv t0, a0
-    la a0, entrada
-    add a0, t0, a0
+
+
+    jal manager
+
+
+    # mv t0, a0
+    # la a0, entrada
+    # add a0, t0, a0
 
     # char* itoa(int value, char* buffer, int base)
     # a0 = valor
     # a1 = buffer
     # a2 = base
-    lw a0, (a1)       # valor a converter
+    la a1, arquiteturaDaRede
+    lw a0, 0(a1)       # valor a converter
     la a1, buffer     # ponteiro para o buffer onde será escrito o número em string
     li a2, 10         # base decimal
     jal itoa          # chama itoa (retorna ponteiro para buffer em a0)
@@ -45,62 +52,67 @@ _start:
     jal exit
 
 
-# Entrada:
-# a0 -> ponteiro para string de entrada (ex: "4,30,20,10,3\n")
-# a1 -> ponteiro para array de inteiros onde salvar
+manager:
+    addi sp, sp, -16
+    sw ra, 12(sp)
+    sw a0, 8(sp)    # salva ponteiro para string original
+    sw a1, 4(sp)    # salva ponteiro para vetor de inteiros
 
-# Saída:
-# a0 -> número de bytes andados na string (até o '\n')
+    loop_manager:
+        lw a0, 8(sp)        # carrega ponteiro atual da string
+        li t1, 123           # '{'
+        lb t0, (a0)   
+        beq t0, t1, fim_manager
 
-parse_numeros:
-    addi sp, sp, -32
-    sw ra, 16(sp)
-    sw a0, 12(sp)      # salva entrada original
-    sw a1, 8(sp)
 
-    mv t0, a0          # ponteiro atual na string
-    mv t1, a1          # ponteiro atual no vetor destino
-    mv t2, t0          # início do número atual
+        jal parse_numeros   # parseia um número, salva em "copia" e retorna novo ponteiro da string em a0
+        sw a0, 8(sp)        # atualiza ponteiro da string
 
-    loop_parse:
-        lb t3, 0(t0)       # t3 = caractere atual
-        li t4, 44          # ','
-        li t5, 10          # '\n'
+        la a0, copia        # ponteiro para string do número
+        jal atoi            # converte para inteiro
 
-        beq t3, t4, salva_num
-        beq t3, t5, salva_ultimo
-        beqz t3, fim       # fim de string por segurança
+        lw a1, 4(sp)        # carrega ponteiro atual do vetor
+        sw a0, 0(a1)        # salva valor convertido
+        addi a1, a1, 4      # anda vetor
+        sw a1, 4(sp)        # salva novo ponteiro
 
-        addi t0, t0, 1     # avança
-        j loop_parse
+        j loop_manager
 
-    salva_num:
-        sb zero, 0(t0)     # substitui ',' por '\0'
-        mv a0, t2          # ponteiro do número isolado
-        jal atoi
-        sw a0, 0(t1)
-        addi t1, t1, 4
-        addi t0, t0, 1     # pula '\0'
-        mv t2, t0
-        j loop_parse
-
-    salva_ultimo:
-        sb zero, 0(t0)     # substitui '\n' por '\0'
-        mv a0, t2
-        jal atoi
-        sw a0, 0(t1)
-        addi t0, t0, 1     # agora t0 aponta para depois do '\n'
-        j fim
-
-    fim:
-        lw ra, 16(sp)
-        lw t6, 12(sp)      # entrada original
-        sub a0, t0, t6     # a0 = bytes andados
-        lw a1, 8(sp)
-        addi sp, sp, 32
+    fim_manager:
+        lw ra, 12(sp)
+        addi sp, sp, 16
         ret
 
 
+
+parse_numeros:
+    addi sp, sp, -16
+    sw ra, 12(sp)
+
+    mv t0, a0          # ponteiro atual na string
+    la a4, copia       # ponteiro para buffer copia
+
+    loop_parse:
+        lb t3, 0(t0)
+        li t4, 44          # ','
+        li t5, 10          # '\n'
+
+        beq t3, t4, fim
+        beq t3, t5, fim
+        beqz t3, fim       # fim de string por segurança
+
+        sb t3, 0(a4)
+        addi a4, a4, 1
+        addi t0, t0, 1
+        j loop_parse
+
+    fim:
+        sb zero, 0(a4)
+        addi t0, t0, 1     # avança além do separador
+        mv a0, t0          # retorna novo ponteiro da string em a0
+        lw ra, 12(sp)
+        addi sp, sp, 16
+        ret
 
 
 
