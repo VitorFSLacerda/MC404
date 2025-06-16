@@ -1,16 +1,29 @@
 .data
 .align 2
-barN: .byte '\n'
+    barN: .byte '\n'
 
+.globl _start
 .globl puts
 .globl gets
 .globl atoi
-.globl itoa
 .globl exit
 
+.bss
+    entrada: .skip 6000
 
 .text
 .align 2
+
+
+_start:
+
+    la a0, entrada
+    jal gets
+    
+    jal exit
+
+
+
 
 # void puts(char* s)
 puts:
