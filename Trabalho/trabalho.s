@@ -160,7 +160,7 @@ gets:
         addi a1, a1, 1       # senão, continua lendo
         j loop2
 
-    fim2
+    fim2:
         sb zero, 0(a1)       # adiciona '\0' ao final
         lw ra, 12(sp)
         addi sp, sp, 16
