@@ -23,7 +23,9 @@ _start:
     jal gets
     la a1, arquiteturaDaRede
     jal parse_numeros
-
+    mv t0, a0
+    la a0, entrada
+    add a0, t0, a0
 
 
 
