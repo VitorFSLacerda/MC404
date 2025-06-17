@@ -14,6 +14,7 @@
 .bss
     entrada: .skip 6000
     arquiteturaDaRede: .skip 6000
+    matrizTerceiro: .skip 6000
     buffer: .skip 32
     copia: .skip 100
 
@@ -33,11 +34,23 @@ _start:
     jal manager
 
 
+
+
+
+
+
+    la a0, entrada
+    jal contador
+    
+    la a0, entrada
+    la a1, matrizTerceiro
+    jal manager
+
     # char* itoa(int value, char* buffer, int base)
     # a0 = valor
     # a1 = buffer
     # a2 = base
-    la a1, arquiteturaDaRede
+    la a1, matrizTerceiro
     lw a0, 0(a1)       # valor a converter
     la a1, buffer     # ponteiro para o buffer onde será escrito o número em string
     li a2, 10         # base decimal
@@ -49,6 +62,25 @@ _start:
 
 
     jal exit
+
+contador:
+    addi sp, sp, -16
+    sw ra, 12(sp)
+    sw a0, 8(sp)    # salva ponteiro para string original
+
+
+    loop_contador:
+        lb t0, 0(a0)  # carrega ponteiro atual da string
+        li t1, 125          # '}'
+        beq t0, t1, fim_contador
+        addi a0, a0, 1
+        j loop_contador
+
+    fim_contador:
+        lw ra, 12(sp)
+        addi sp, sp, 16
+        addi a0, a0, 2
+        ret
 
 
 manager:
