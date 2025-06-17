@@ -1,6 +1,7 @@
 .data
 .align 2
     barN: .byte '\n'
+    texto: .asciz "testado\0" 
 
 .globl _start
 .globl puts
@@ -25,15 +26,12 @@ _start:
 
     la a0, entrada
     jal gets
-    la a1, arquiteturaDaRede
 
+    la a0, entrada
+    la a1, arquiteturaDaRede
 
     jal manager
 
-
-    # mv t0, a0
-    # la a0, entrada
-    # add a0, t0, a0
 
     # char* itoa(int value, char* buffer, int base)
     # a0 = valor
@@ -43,6 +41,7 @@ _start:
     lw a0, 0(a1)       # valor a converter
     la a1, buffer     # ponteiro para o buffer onde será escrito o número em string
     li a2, 10         # base decimal
+
     jal itoa          # chama itoa (retorna ponteiro para buffer em a0)
     jal puts          # imprime a string no buffer
 
